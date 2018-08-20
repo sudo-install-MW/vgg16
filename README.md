@@ -12,4 +12,11 @@
     3. Loss function
     4. accuracy metrics
 
+4. Network
+    1. input -> 784
+    2. layer 1 -> 784
+    3. layer 2 -> 784
+    4. layer 3 -> 784
+    5. logit -> 10
+
 feed data from a dataset -> train model -> inference / predict
