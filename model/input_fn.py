@@ -1,4 +1,7 @@
 from random import shuffle
+from sklearn.model_selection import train_test_split
+import json
+import pathlib
 import tensorflow as tf
 import pathlib
 import os
@@ -6,17 +9,45 @@ import os
 
 class DataSetCreator():
     def __init__(self, data_dir):
-        self.root_dir = data_dir
-        files, labels = self.extract_data_and_labels
+        self.root_dir = pathlib.Path(data_dir)
+        self.create_label_json()
+        self.images, self.labels = self.extract_data_and_labels()
+
+    def create_label_json(self):
+        labels = [str(dirs).split('/')[-1] for dirs in list(self.root_dir.glob('*'))]
+        self.label_dict = {}
+        i = 0
+        for label in labels:
+            self.label_dict[label] = i
+            i += 1
+
+        print("writing labels the following to label map \n", self.label_dict)
+        with open('./label_map.json', 'w') as lf:
+            json.dump(self.label_dict, lf)
 
     def extract_data_and_labels(self):
-        pass
+        images = [str(i) for i in list(self.root_dir.glob('*/*.png'))]
+        labels = [self.label_dict[image.split('/')[-2]] for image in images]
+        return images, labels
+
+    def create_iterator_dataset(self, dataset):
+        iterator = dataset.make_initializable_iterator()
+        images, labels = iterator.get_next()
+        iterator_init_op = iterator.initializer
+
+        inputs = {'images': images, 'labels': labels,
+                'iterator_init_op': iterator_init_op}
+        return inputs
 
     def get_train_data(self):
-        pass
+        ds = tf.data.Dataset.from_tensor_slices(self.images, self.labels)
 
     def get_train_val_data(self):
         pass
+
+    def _parse(self, image, label, size=(224, 224)):
+        image = tf.io.read(image)
+
 
 def batch_and_optimize(dataset, buffer_size=1000, batch_size=8):
     ds = dataset.cache()
@@ -55,5 +86,6 @@ def create_dataset(root_path, image_format=None, training=True, batch_size=8):
 
 if __name__ == "__main__":
     dataset_path = "/media/maheshwaran.umapathy/thunder/datasets/opensource/cifar/cifar_10/train"
-    dataset = create_dataset(dataset_path, 'png')
-    print(dataset)
+    # dataset = create_dataset(dataset_path, 'png')
+    # print(dataset)
+    ds = DataSetCreator(dataset_path)
